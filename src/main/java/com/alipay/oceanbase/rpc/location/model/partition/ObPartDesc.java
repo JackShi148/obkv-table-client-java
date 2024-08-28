@@ -22,7 +22,7 @@ import com.alipay.oceanbase.rpc.protocol.payload.impl.ObColumn;
 import com.alipay.oceanbase.rpc.protocol.payload.impl.ObObj;
 import com.alipay.oceanbase.rpc.util.StringUtil;
 import com.alipay.oceanbase.rpc.util.TableClientLoggerFactory;
-import com.alipay.oceanbase.rpc.mutation.*;
+import com.alipay.oceanbase.rpc.mutation.Row;
 import org.slf4j.Logger;
 
 import java.util.*;
@@ -92,7 +92,7 @@ public abstract class ObPartDesc {
      */
     public int getPartNum() {
         return -1;
-    };
+    }
 
     /*
      * Get ordered part column names.
@@ -169,49 +169,7 @@ public abstract class ObPartDesc {
 
     //to prepare partition calculate resource
     //to check partition calculate is ready
-    public void prepare() throws IllegalArgumentException {
-        /*if (orderedPartColumnNames == EMPTY_LIST) {
-            throw new IllegalArgumentException(
-                "prepare ObPartDesc failed. orderedPartColumnNames is empty");
-        }
-
-        if (rowKeyElement == null || rowKeyElement.size() == 0) {
-            throw new IllegalArgumentException("prepare ObPartDesc failed. rowKeyElement is empty");
-        }
-
-        if (partColumns == null || partColumns.size() == 0) {
-            throw new IllegalArgumentException("prepare ObPartDesc failed. partColumns is empty");
-        }
-        List<ObPair<ObColumn, List<Integer>>> orderPartRefColumnRowKeyRelations = new ArrayList<ObPair<ObColumn, List<Integer>>>(
-            orderedPartColumnNames.size());
-        for (String partOrderColumnName : orderedPartColumnNames) {
-            for (ObColumn column : partColumns) {
-                if (column.getColumnName().equalsIgnoreCase(partOrderColumnName)) {
-                    List<Integer> partRefColumnRowKeyIndexes = new ArrayList<Integer>(column
-                        .getRefColumnNames().size());
-                    for (String refColumn : column.getRefColumnNames()) {
-                        boolean rowKeyElementRefer = false;
-                        for (String rowKeyElementName : rowKeyElement.keySet()) {
-                            if (rowKeyElementName.equalsIgnoreCase(refColumn)) {
-                                partRefColumnRowKeyIndexes
-                                    .add(rowKeyElement.get(rowKeyElementName));
-                                rowKeyElementRefer = true;
-                            }
-                        }
-                        if (!rowKeyElementRefer) {
-                            throw new IllegalArgumentException("partition order column "
-                                                               + partOrderColumnName
-                                                               + " refer to non-row-key column "
-                                                               + refColumn);
-                        }
-                    }
-                    orderPartRefColumnRowKeyRelations.add(new ObPair<ObColumn, List<Integer>>(
-                        column, partRefColumnRowKeyIndexes));
-                }
-            }
-        }
-        this.orderedPartRefColumnRowKeyRelations = orderPartRefColumnRowKeyRelations;*/
-    }
+    public void prepare() throws IllegalArgumentException { /* do nothing now */ }
 
     /*
      * Eval row key values.
@@ -223,12 +181,9 @@ public abstract class ObPartDesc {
         String[] rowColumnNames = row.getColumns();
 
         if (rowValues.length < partColumnSize) {
-            throw new IllegalArgumentException("row key is consist of " + rowKeyElement
-                                               + "but found" + Arrays.toString(rowValues));
-        } /*else {
-            rowValues = Arrays.copyOfRange(rowValues, 0, partColumnSize);
-            rowColumnNames = Arrays.copyOfRange(rowColumnNames, 0, partColumnSize);
-        }*/
+            throw new IllegalArgumentException("Input row key should at least include " + partColumns
+                    + "but found" + Arrays.toString(rowValues));
+        }
 
 
         boolean needEval = true;

@@ -451,18 +451,8 @@ public class ObTableClient extends AbstractObTableClient implements Lifecycle {
     private abstract class TableExecuteCallback<T> {
         private final Object[] rowKey;
 
-        //        private final Row row = new Row();
-
         TableExecuteCallback(Object[] rowKey) {
             this.rowKey = rowKey;
-            //            String[] columnNames = getRowKeyElement(tableName).keySet().toArray(new String[0]);
-            //            if(columnNames.length != rowKey.length) {
-            //                throw new ObTableException("Invalid input rowKey");
-            //            }
-            //            for(int i = 0; i < columnNames.length; ++i) {
-            //                this.row.add(columnNames[i], rowKey[i]);
-            //            }
-
         }
 
         void checkObTableOperationResult(String ip, int port, ObPayload request, ObPayload result) {
@@ -1351,12 +1341,6 @@ public class ObTableClient extends AbstractObTableClient implements Lifecycle {
      * @return
      */
     private long getPartition(TableEntry tableEntry, Row row) {
-        // change up to getTable to judge
-//        if (!tableEntry.isPartitionTable()
-//            || tableEntry.getPartitionInfo().getLevel() == ObPartitionLevel.LEVEL_ZERO) {
-//            return 0L;
-//        }
-
         if (tableEntry.getPartitionInfo().getLevel() == ObPartitionLevel.LEVEL_ONE) {
             return tableEntry.getPartitionInfo().getFirstPartDesc().getPartId(row);
         }
@@ -1479,16 +1463,12 @@ public class ObTableClient extends AbstractObTableClient implements Lifecycle {
         }
         else {
             Row row = new Row();
-            List<String> curTableRowKeyNames = new ArrayList<>(tableEntry.getRowKeyElement().keySet());
-            List<String> inputRowKeyNames = new ArrayList<>();
+            List<String> curTableRowKeyNames = new ArrayList<String>(tableEntry.getRowKeyElement().keySet());
+            List<String> inputRowKeyNames = new ArrayList<String>();
             if (!tableRowKeyElement.isEmpty()) {
                 inputRowKeyNames = new ArrayList<>(getRowKeyElement(tableName).keySet());
             }
-//            if (curTableRowKeyNames.size() != rowKey.length) {
-//                throw new ObTableException(
-//                        "The rowKey Param should include the entire row key but receive "
-//                                + Arrays.toString(rowKey));
-//            }
+
             // match the correct key to its row key
             for (int i = 0; i < rowKey.length; ++i) {
                 if (i < curTableRowKeyNames.size()) {
@@ -1497,7 +1477,7 @@ public class ObTableClient extends AbstractObTableClient implements Lifecycle {
                 else if (!inputRowKeyNames.isEmpty() && i < inputRowKeyNames.size()) {  // add the rest redundant row key element
                     row.add(inputRowKeyNames.get(i), rowKey[i]);
                 }
-                else { // the rowKey Element in the table only contain partition key(s)
+                else { // the rowKey element in the table only contain partition key(s)
                     break;
                 }
             }
@@ -1518,8 +1498,8 @@ public class ObTableClient extends AbstractObTableClient implements Lifecycle {
      * @throws Exception exception
      */
     public ObPair<Long, ObTableParam> getTable(String tableName, ObTableQuery query, List<ObNewRange> keyRanges, boolean refresh,
-                                               boolean waitForRefresh, ObServerRoute route)
-            throws Exception {
+                                          boolean waitForRefresh, ObServerRoute route)
+                                                                                      throws Exception {
         Map<Long, ObTableParam> partIdMapObTable = new HashMap<Long, ObTableParam>();
         for (ObNewRange rang : keyRanges) {
             ObRowKey startKey = rang.getStartKey();
@@ -1691,13 +1671,13 @@ public class ObTableClient extends AbstractObTableClient implements Lifecycle {
      * @return list of ObPair of partId(logicId) and table obTableParams
      * @throws Exception exception
      */
-    public List<ObPair<Long, ObTableParam>> getTables(String tableName, ObTableQuery query,
-                                                      Object[] start, boolean startInclusive,
-                                                      Object[] end, boolean endInclusive,
-                                                      boolean refresh, boolean waitForRefresh)
-            throws Exception {
+
+    public List<ObPair<Long, ObTableParam>> getTables(String tableName, ObTableQuery query, Object[] start,
+                                                      boolean startInclusive, Object[] end,
+                                                      boolean endInclusive, boolean refresh,
+                                                      boolean waitForRefresh) throws Exception {
         return getTables(tableName, query, start, startInclusive, end, endInclusive, refresh,
-                waitForRefresh, getRoute(false));
+            waitForRefresh, getRoute(false));
     }
 
     /**
@@ -1911,7 +1891,7 @@ public class ObTableClient extends AbstractObTableClient implements Lifecycle {
             @Override
             public Map<String, Object> execute(ObPair<Long, ObTableParam> obPair) throws Exception {
                 long getTableTime = System.currentTimeMillis();
-                ObTableParam tableParam = obPair.getRight(); // 无理解如何通过getRight获得对应table参数
+                ObTableParam tableParam = obPair.getRight();
                 ObTable obTable = tableParam.getObTable();
                 ObTableOperationRequest request = ObTableOperationRequest.getInstance(tableName,
                     GET, rowKey, columns, null, obTable.getObTableOperationTimeout());

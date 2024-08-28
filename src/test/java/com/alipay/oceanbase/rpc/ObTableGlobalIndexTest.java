@@ -345,8 +345,14 @@ public class ObTableGlobalIndexTest {
     }
 
     @Test
+    public void test_query_in_local_index_not_use_rowkey() throws Exception {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            test_query_in_global_index_table("test_global_index_no_part");
+        });
+    }
+
+    @Test
     public void test_non_partition_index_table() throws Exception {
-        test_query_in_global_index_table("test_global_index_no_part");
         test_query_in_global_index_table("test_global_all_no_part");
         test_query_in_global_index_table("test_global_primary_no_part");
     }
@@ -429,30 +435,30 @@ public class ObTableGlobalIndexTest {
             Assert.assertEquals(resultSet3.cacheSize(), recordCount);
 
             // query by local index, will lookup primary table
-//            TableQuery query4 = client.query(tableName).indexName("idx2");
-//            query4.setScanRangeColumns("C3");
-//            query4.addScanRange(new Object[] { 0 }, new Object[] { recordCount + 200 + 2 });
-//            query4.select("C1", "C2", "C3");
-//            QueryResultSet resultSet4 = query4.execute();
-//            Assert.assertEquals(resultSet4.cacheSize(), recordCount);
-//            count = 0;
-//            while (resultSet4.next()) {
-//                Map<String, Object> row = resultSet4.getRow();
-//                int c1 = (int) row.get("C1");
-//                int c2 = (int) row.get("C2");
-//                int c3 = (int) row.get("C3");
-//                if (c1 % 3 == 0) {
-//                    Assert.assertEquals(c1 + 1, c2);
-//                    Assert.assertEquals(c1 + 2, c3);
-//                } else if (c1 % 3 == 1) {
-//                    Assert.assertEquals(c1 + 100 + 1, c2);
-//                    Assert.assertEquals(c1 + 100 + 2, c3);
-//                } else if (c1 % 3 == 2) {
-//                    Assert.assertEquals(c1 + 200 + 1, c2);
-//                    Assert.assertEquals(c1 + 200 + 2, c3);
-//                }
-//                count++;
-//            }
+            TableQuery query4 = client.query(tableName).indexName("idx2");
+            query4.setScanRangeColumns("C3");
+            query4.addScanRange(new Object[] { 0 }, new Object[] { recordCount + 200 + 2 });
+            query4.select("C1", "C2", "C3");
+            QueryResultSet resultSet4 = query4.execute();
+            Assert.assertEquals(resultSet4.cacheSize(), recordCount);
+            count = 0;
+            while (resultSet4.next()) {
+                Map<String, Object> row = resultSet4.getRow();
+                int c1 = (int) row.get("C1");
+                int c2 = (int) row.get("C2");
+                int c3 = (int) row.get("C3");
+                if (c1 % 3 == 0) {
+                    Assert.assertEquals(c1 + 1, c2);
+                    Assert.assertEquals(c1 + 2, c3);
+                } else if (c1 % 3 == 1) {
+                    Assert.assertEquals(c1 + 100 + 1, c2);
+                    Assert.assertEquals(c1 + 100 + 2, c3);
+                } else if (c1 % 3 == 2) {
+                    Assert.assertEquals(c1 + 200 + 1, c2);
+                    Assert.assertEquals(c1 + 200 + 2, c3);
+                }
+                count++;
+            }
 
         } finally {
             cleanPartitionLocationTable(tableName);
@@ -558,7 +564,7 @@ public class ObTableGlobalIndexTest {
                 .addMutateColVal(colVal(expireCol, curTs)).execute();
 
             // 3. re-query all inserted records, the expired record won't be returned
-            resultSet = client.query(tableName).indexName("idx2").setScanRangeColumns(intCol2)
+            resultSet = client.query(tableName).indexName("idx2").setScanRangeColumns(intCol)
                 .addScanRange(new Object[] { 101L }, new Object[] { 102L }).execute();
             Assert.assertEquals(resultSet.cacheSize(), 1);
             Assert.assertTrue(resultSet.next());

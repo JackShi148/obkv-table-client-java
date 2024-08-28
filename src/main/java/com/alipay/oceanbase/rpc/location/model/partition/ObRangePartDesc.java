@@ -65,6 +65,7 @@ public class ObRangePartDesc extends ObPartDesc {
     public List<ObObjType> getOrderedCompareColumnTypes() {
         return orderedCompareColumnTypes;
     }
+    private List<Long>          completeWorks;
 
     /*
      * Set ordered compare column types.
@@ -245,8 +246,8 @@ public class ObRangePartDesc extends ObPartDesc {
             throw new ObTableException("invalid format of rowObj: " + rowObj);
         }
         Row row = (Row) rowObj.get(0);
-        if (row.size() != rowKeyElement.size()) {
-            throw new IllegalArgumentException("row key is consist of " + rowKeyElement
+        if (row.size() < partColumns.size()) {
+            throw new IllegalArgumentException("Input row key should at least include " + partColumns
                                                + "but found" + Arrays.toString(row.getValues()));
         }
 
