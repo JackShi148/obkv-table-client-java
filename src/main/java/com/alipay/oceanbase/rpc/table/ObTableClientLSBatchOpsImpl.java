@@ -591,7 +591,7 @@ public class ObTableClientLSBatchOpsImpl extends AbstractTableBatchOps {
                         obTableClient.eraseTableGroupFromCache(tableName);
                         String newRealTableName = obTableClient.tryGetTableNameFromTableGroupCache(tableName, true);
                         if (realTableName.equalsIgnoreCase(newRealTableName)) {
-                            throw new ObTableNotExistException("multi column-family operations contain not existed table name", ResultCodes.OB_ERR_UNKNOWN_TABLE.errorCode);
+                            throw new ObTableNotExistException(ex.getMessage(), ResultCodes.OB_TABLE_NOT_EXIST.errorCode);
                         } else {
                             realTableName = newRealTableName;
                         }
@@ -784,7 +784,17 @@ public class ObTableClientLSBatchOpsImpl extends AbstractTableBatchOps {
                             executeWithRetries(finalObTableOperationResults, entry, maxRetries);
                         } catch (Exception e) {
                             logger.error(LCD.convert("01-00026"), e);
-                            executor.collectExceptions(e);
+                            ObTableLSBatchExecuteException lsException;
+                            if (executor.getThrowableList().isEmpty()) {
+                                lsException = new ObTableLSBatchExecuteException();
+                                lsException.addOperations(entry.getKey(), entry.getValue());
+                                lsException.addException(entry.getKey(), e);
+                                executor.collectExceptions(lsException);
+                            } else {
+                                lsException = (ObTableLSBatchExecuteException) executor.getThrowableList().get(0);
+                                lsException.addOperations(entry.getKey(), entry.getValue());
+                                lsException.addException(entry.getKey(), e);
+                            }
                         } finally {
                             ThreadLocalMap.reset();
                         }
@@ -827,10 +837,19 @@ public class ObTableClientLSBatchOpsImpl extends AbstractTableBatchOps {
             }
 
         } else {
+            ObTableLSBatchExecuteException lsException = new ObTableLSBatchExecuteException();
             // Execute sub-batch operation one by one
             for (final Map.Entry<Long, Map<Long, ObPair<ObTableParam, List<ObPair<Integer, ObTableSingleOp>>>>> entry : lsOperations
                 .entrySet()) {
-                executeWithRetries(obTableOperationResults, entry, maxRetries);
+                 try {
+                     executeWithRetries(obTableOperationResults, entry, maxRetries);
+                 } catch (Exception e) {
+                     lsException.addOperations(entry.getKey(), entry.getValue());
+                     lsException.addException(entry.getKey(), e);
+                 }
+            }
+            if (!lsException.isEmpty()) {
+                throw lsException;
             }
         }
 
