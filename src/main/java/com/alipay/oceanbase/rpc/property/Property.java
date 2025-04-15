@@ -53,7 +53,7 @@ public enum Property {
     RS_LIST_ACQUIRE_RETRY_INTERNAL("rs.list.acquire.retry.internal", 100L, "每次尝试获取RS列表的时间间隔"),
 
     // [ObTableClient][TABLE_ENTRY]
-    TABLE_ENTRY_ACQUIRE_CONNECT_TIMEOUT("table.entry.acquire.connect.timeout", 500L,
+    TABLE_ENTRY_ACQUIRE_CONNECT_TIMEOUT("table.entry.acquire.connect.timeout", 3000L,
                                         "刷新TABLE地址的建连超时时间"),
 
     TABLE_ENTRY_ACQUIRE_SOCKET_TIMEOUT("table.entry.acquire.socket.timeout", 3000L,

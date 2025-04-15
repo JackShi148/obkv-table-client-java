@@ -303,8 +303,9 @@ public class LocationUtil {
      */
     private static String formatObServerUrl(ObServerAddr obServerAddr, long connectTimeout,
                                             long socketTimeout) {
+        logger.warn("[latency monitor] format jdbc url, connectTimeout: {}, socketTimeout: {}", connectTimeout, socketTimeout);
         return format(
-            "jdbc:mysql://%s/oceanbase?useUnicode=true&characterEncoding=utf-8&connectTimeout=%d&socketTimeout=%d",
+            "jdbc:mysql://%s/oceanbase?useUnicode=true&characterEncoding=utf-8&useSSL=false&connectTimeout=%d&socketTimeout=%d",
             obServerAddr.getIp() + ":" + obServerAddr.getSqlPort(), connectTimeout, socketTimeout);
     }
 
@@ -322,6 +323,7 @@ public class LocationUtil {
             return DriverManager.getConnection(url, sysUA.getUserName(), sysUA.getPassword());
         } catch (Exception e) {
             RUNTIME.error(LCD.convert("01-00005"), e.getMessage(), e);
+            logger.error("[latency monitor] fail to get connection by JDBC");
             // Since the JDBC connection fails here, it is likely that the server has crashed or scaling down.
             // Therefore, we need to set the Inactive flag of the ObTableEntryRefreshException to true.
             // This allows the upper-layer retry mechanism to catch this exception and immediately refresh the metadata.
@@ -419,8 +421,8 @@ public class LocationUtil {
         try {
             long start = System.currentTimeMillis();
             connection = getMetaRefreshConnection(url, sysUA);
-            logger.warn("[latency monitor] time to build JDBC connection: {}",
-                System.currentTimeMillis() - start);
+            logger.warn("[latency monitor] time to build JDBC connection: {}, url: {}",
+                System.currentTimeMillis() - start, url);
             entry = callback.execute(connection);
         } catch (ObTableNotExistException e) {
             // avoid to refresh meta for ObTableNotExistException
