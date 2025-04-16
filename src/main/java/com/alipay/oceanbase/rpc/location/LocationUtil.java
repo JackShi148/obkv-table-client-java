@@ -320,7 +320,15 @@ public class LocationUtil {
                                                                                     throws ObTableEntryRefreshException {
 
         try {
-            return DriverManager.getConnection(url, sysUA.getUserName(), sysUA.getPassword());
+            Connection c = DriverManager.getConnection(url, sysUA.getUserName(), sysUA.getPassword());
+            Statement s = c.createStatement();
+            ResultSet rs = s.executeQuery("SELECT CONNECTION_ID()");
+            if (rs.next()) {
+                logger.warn("connection information, connection_id: {}", rs.getString(1));
+            }
+            rs.close();
+            s.close();
+            return c;
         } catch (Exception e) {
             RUNTIME.error(LCD.convert("01-00005"), e.getMessage(), e);
             logger.error("[latency monitor] fail to get connection by JDBC");
