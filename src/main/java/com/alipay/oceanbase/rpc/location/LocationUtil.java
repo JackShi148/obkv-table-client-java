@@ -306,7 +306,7 @@ public class LocationUtil {
         logger.warn("[latency monitor] format jdbc url, connectTimeout: {}, socketTimeout: {}", connectTimeout, socketTimeout);
         return format(
             "jdbc:mysql://%s/oceanbase?useUnicode=true&characterEncoding=utf-8&useSSL=false&connectTimeout=%d&socketTimeout=%d",
-            obServerAddr.getIp() + ":" + obServerAddr.getSqlPort(), connectTimeout, socketTimeout);
+            "11.124.9.6:5935", connectTimeout, socketTimeout);
     }
 
     /*
