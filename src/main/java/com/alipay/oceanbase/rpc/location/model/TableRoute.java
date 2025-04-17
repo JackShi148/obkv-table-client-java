@@ -197,6 +197,7 @@ public class TableRoute {
      * */
     public void initRoster(TableEntryKey rootServerKey, boolean initialized,
                            ObTableClient.RunningMode runningMode) throws Exception {
+        long start = System.currentTimeMillis();
         List<ObServerAddr> servers = new ArrayList<ObServerAddr>();
         ConcurrentHashMap<ObServerAddr, ObTable> addr2Table = new ConcurrentHashMap<ObServerAddr, ObTable>();
         List<ObServerAddr> rsList = configServerInfo.getRsList();
@@ -332,6 +333,7 @@ public class TableRoute {
         }
         // record last refresh meta time
         this.lastRefreshMetadataTimestamp = System.currentTimeMillis();
+        logger.warn("[latency monitor] finish initRoster use time: {}", System.currentTimeMillis() - start);
     }
 
     public void launchRouteRefresher() {

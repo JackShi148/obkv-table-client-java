@@ -320,7 +320,10 @@ public class LocationUtil {
                                                                                     throws ObTableEntryRefreshException {
 
         try {
+            long start = System.currentTimeMillis();
             Connection c = DriverManager.getConnection(url, sysUA.getUserName(), sysUA.getPassword());
+            logger.warn("[latency monitor] time to build JDBC connection: {}, url: {}",
+                    System.currentTimeMillis() - start, url);
             Statement s = c.createStatement();
             ResultSet rs = s.executeQuery("SELECT CONNECTION_ID()");
             if (rs.next()) {
@@ -427,11 +430,10 @@ public class LocationUtil {
         Connection connection = null;
         TableEntry entry;
         try {
-            long start = System.currentTimeMillis();
             connection = getMetaRefreshConnection(url, sysUA);
-            logger.warn("[latency monitor] time to build JDBC connection: {}, url: {}",
-                System.currentTimeMillis() - start, url);
+            long start = System.currentTimeMillis();
             entry = callback.execute(connection);
+            logger.warn("[latency monitor] finish call execute, use time: {}", System.currentTimeMillis() - start);
         } catch (ObTableNotExistException e) {
             // avoid to refresh meta for ObTableNotExistException
             RUNTIME.error("callTableEntryRefresh meet table not existed exception", e);
