@@ -851,14 +851,11 @@ public class TableRoute {
         ObTable obTable = tableRoster.getTable(addr);
         while ((obTable == null) && retryTimes < 2) {
             ++retryTimes;
-            // need to refresh table roster to ensure the current roster is the latest
-            tableClient.syncRefreshMetadata(true);
             // the addr is wrong, need to refresh location
             if (logger.isInfoEnabled()) {
                 logger.info("Cannot get ObTable by addr {}, refreshing metadata, tryTimes: {}.", addr, retryTimes);
             }
-            // refresh tablet location based on the latest roster, in case that some of the observers have been killed
-            // and used the old location
+            // refresh tablet location first
             tableEntry = refreshPartitionLocation(tableName, tabletId, tableEntry);
             obPartitionLocationInfo = getOrRefreshPartitionInfo(tableEntry, tableName, tabletId);
             replica = getPartitionLocation(obPartitionLocationInfo, route);
@@ -869,6 +866,11 @@ public class TableRoute {
             }
             addr = replica.getAddr();
             obTable = tableRoster.getTable(addr);
+            if (obTable == null) {
+                // new observer comes to serve, refresh tenant server list to obtain it
+                tableClient.syncRefreshMetadata(true);
+                obTable = tableRoster.getTable(addr);
+            }
         }
         if (obTable == null) {
             RUNTIME.error("cannot get table by addr: " + addr);
