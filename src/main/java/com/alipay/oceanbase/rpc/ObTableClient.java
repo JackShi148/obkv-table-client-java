@@ -2419,6 +2419,9 @@ public class ObTableClient extends AbstractObTableClient implements Lifecycle {
             ObTableParam tableParam = tableRoute.getTableParam(realTableName, row);
             ObTable obTable = tableParam.getObTable();
             request.setTimeout(obTable.getObTableOperationTimeout());
+            logger.info("[debug recovery] hbase put ip:port {}:{}, tablet_id: {}, ls_id:{}, table_id: {}",
+                    obTable.getObServerAddr().getIp(), obTable.getObServerAddr().getSvrPort(),
+                    tableParam.getPartitionId(), tableParam.getLsId(), tableParam.getTableId());
             return executeWithRetry(obTable, request, realTableName);
         }
     }

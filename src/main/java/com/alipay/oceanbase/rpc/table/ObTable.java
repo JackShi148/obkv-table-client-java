@@ -193,7 +193,6 @@ public class ObTable extends AbstractObTable implements Lifecycle {
 
     // flag this obTable is valid and available
     public void setValid() {
-        log.debug("set ip:port {}:{} as valid", ip, port);
         valid.compareAndSet(false, true);
     }
 

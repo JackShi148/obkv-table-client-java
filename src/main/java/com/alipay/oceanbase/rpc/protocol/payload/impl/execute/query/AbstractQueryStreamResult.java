@@ -41,6 +41,7 @@ import com.alipay.oceanbase.rpc.table.ObTable;
 import com.alipay.oceanbase.rpc.table.ObTableParam;
 import io.netty.buffer.ByteBuf;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -51,6 +52,8 @@ import static com.alipay.oceanbase.rpc.util.TableClientLoggerFactory.RUNTIME;
 public abstract class AbstractQueryStreamResult extends AbstractPayload implements
                                                                        QueryStreamResult {
 
+    private static final Logger                                                log                 = LoggerFactory
+                                                                                                       .getLogger(AbstractQueryStreamResult.class);
     protected ReentrantLock                                                    lock                = new ReentrantLock();
     protected volatile boolean                                                 initialized         = false;
     protected volatile boolean                                                 closed              = false;
@@ -159,6 +162,12 @@ public abstract class AbstractQueryStreamResult extends AbstractPayload implemen
                 if (client.isOdpMode()) {
                     result = subObTable.executeWithConnection(request, connectionRef);
                 } else {
+                    logger.info(
+                        "[debug recovery] query commonExecute ip:port {}:{}, tablet_id: {}, ls_id:{}, table_id: {}",
+                        subObTable.getObServerAddr().getIp(), subObTable.getObServerAddr()
+                            .getSvrPort(), partIdWithIndex.getRight().getPartitionId(),
+                        partIdWithIndex.getRight().getLsId(), partIdWithIndex.getRight()
+                            .getTableId());
                     result = subObTable.execute(request);
                     if (result != null && result.getPcode() == Pcodes.OB_TABLE_API_MOVE) {
                         ObTableApiMove moveResponse = (ObTableApiMove) result;
@@ -175,13 +184,16 @@ public abstract class AbstractQueryStreamResult extends AbstractPayload implemen
                             throw new ObTableRoutingWrongException();
                         }
                     } else if (result != null && result.isRoutingWrong()) {
-                        logger.debug("errors happened in server and retried successfully, server ip:port is {}:{}, tableName: {}, need_refresh_meta: {}",
-                                subObTable.getIp(), subObTable.getPort(), indexTableName, result.isNeedRefreshMeta());
-                        TableEntry tableEntry = result.isNeedRefreshMeta() ?
-                                client.getOrRefreshTableEntry(indexTableName, true) :
-                                client.getOrRefreshTableEntry(indexTableName, false);
-                        long tabletId = client.getTabletIdByPartId(tableEntry, partIdWithIndex.getLeft());
-                        client.refreshTableLocationByTabletId(indexTableName, tabletId);
+                        logger
+                            .debug(
+                                "errors happened in server and retried successfully, server ip:port is {}:{}, tableName: {}, need_refresh_meta: {}",
+                                subObTable.getIp(), subObTable.getPort(), indexTableName,
+                                result.isNeedRefreshMeta());
+                        TableEntry tableEntry = result.isNeedRefreshMeta() ? client
+                            .getOrRefreshTableEntry(indexTableName, true) : client
+                            .getOrRefreshTableEntry(indexTableName, false);
+                        client.refreshTableLocationByTabletId(indexTableName,
+                                client.getTabletIdByPartId(tableEntry, partIdWithIndex.getLeft()));
                     }
                 }
                 client.resetExecuteContinuousFailureCount(indexTableName);
@@ -189,16 +201,15 @@ public abstract class AbstractQueryStreamResult extends AbstractPayload implemen
             } catch (Exception e) {
                 if (client.isOdpMode()) {
                     // if exceptions need to retry, retry to timeout
-                    if (e instanceof ObTableException
-                        && ((ObTableException) e).isNeedRetryError()) {
+                    if (e instanceof ObTableException && ((ObTableException) e).isNeedRetryError()) {
                         logger
                             .warn(
                                 "tablename:{} stream query execute while meet Exception in odp mode needing retry, errorCode: {}, errorMsg: {}, try times {}",
                                 indexTableName, ((ObTableException) e).getErrorCode(),
                                 e.getMessage(), tryTimes);
                     } else {
-                        logger.warn("meet exception when execute in odp mode." +
-                                "tablename: {}, errMsg: {}", indexTableName, e.getMessage());
+                        logger.warn("meet exception when execute in odp mode."
+                                    + "tablename: {}, errMsg: {}", indexTableName, e.getMessage());
                         throw e;
                     }
                 } else {
@@ -223,24 +234,24 @@ public abstract class AbstractQueryStreamResult extends AbstractPayload implemen
                         // retry to timeout
                         if (System.currentTimeMillis() - startExecute < client.getRuntimeMaxWait()) {
                             logger
-                                    .warn(
-                                            "meet global index route exception: indexTableName:{} partition id:{}, errorCode: {}, retry times {}",
-                                            indexTableName, partIdWithIndex.getLeft(),
-                                            ((ObTableException) e).getErrorCode(), tryTimes, e);
+                                .warn(
+                                    "meet global index route exception: indexTableName:{} partition id:{}, errorCode: {}, retry times {}",
+                                    indexTableName, partIdWithIndex.getLeft(),
+                                    ((ObTableException) e).getErrorCode(), tryTimes, e);
                             indexTableName = client.getIndexTableName(tableName,
-                                    tableQuery.getIndexName(), tableQuery.getScanRangeColumns(), true);
+                                tableQuery.getIndexName(), tableQuery.getScanRangeColumns(), true);
                         } else {
                             logger
-                                    .warn(
-                                            "meet global index route exception: indexTableName:{} partition id:{}, errorCode: {}, retry to timeout, retry times {}",
-                                            indexTableName, partIdWithIndex.getLeft(),
-                                            ((ObTableException) e).getErrorCode(), tryTimes, e);
+                                .warn(
+                                    "meet global index route exception: indexTableName:{} partition id:{}, errorCode: {}, retry to timeout, retry times {}",
+                                    indexTableName, partIdWithIndex.getLeft(),
+                                    ((ObTableException) e).getErrorCode(), tryTimes, e);
                             throw e;
                         }
                     } else if (e instanceof ObTableException) {
                         if ((((ObTableException) e).getErrorCode() == ResultCodes.OB_TABLE_NOT_EXIST.errorCode
-                             || ((ObTableException) e).getErrorCode() == ResultCodes.OB_NOT_SUPPORTED.errorCode
-                                || ((ObTableException) e).getErrorCode() == ResultCodes.OB_SCHEMA_ERROR.errorCode)
+                             || ((ObTableException) e).getErrorCode() == ResultCodes.OB_NOT_SUPPORTED.errorCode || ((ObTableException) e)
+                            .getErrorCode() == ResultCodes.OB_SCHEMA_ERROR.errorCode)
                             && ((request instanceof ObTableQueryAsyncRequest && ((ObTableQueryAsyncRequest) request)
                                 .getObTableQueryRequest().getTableQuery().isHbaseQuery()) || (request instanceof ObTableQueryRequest && ((ObTableQueryRequest) request)
                                 .getTableQuery().isHbaseQuery()))
@@ -258,8 +269,10 @@ public abstract class AbstractQueryStreamResult extends AbstractPayload implemen
                                 // if the tableEntry is not cached in this client, tableEntry will refresh meta information and its tablet-ls information
                                 // if the server has the capacity to distribute ls request, no need to refresh ls_id and so tablet location
                                 if (e instanceof ObTableNeedFetchMetaException) {
-                                    TableEntry tableEntry = client.getOrRefreshTableEntry(indexTableName, true);
-                                    if (((ObTableNeedFetchMetaException) e).isNeedRefreshMetaAndLocation()) {
+                                    TableEntry tableEntry = client.getOrRefreshTableEntry(
+                                        indexTableName, true);
+                                    if (((ObTableNeedFetchMetaException) e)
+                                        .isNeedRefreshMetaAndLocation()) {
                                         long tabletId = client.getTabletIdByPartId(tableEntry, partIdWithIndex.getLeft());
                                         client.refreshTableLocationByTabletId(indexTableName,
                                             tabletId);
@@ -296,11 +309,13 @@ public abstract class AbstractQueryStreamResult extends AbstractPayload implemen
                         } else {
                             if (e instanceof ObTableTransportException
                                 && ((ObTableTransportException) e).getErrorCode() == TransportCodes.BOLT_TIMEOUT) {
-                                logger.debug("query meet transport timeout, obTable ip:port is {}:{}",
-                                        subObTable.getIp(), subObTable.getPort());
+                                logger.debug(
+                                    "query meet transport timeout, obTable ip:port is {}:{}",
+                                    subObTable.getIp(), subObTable.getPort());
                                 long tabletId = partIdWithIndex.getRight().getTabletId();
                                 subObTable.setDirty();
-                                client.dealWithRpcTimeoutForSingleTablet(subObTable.getObServerAddr(), indexTableName, tabletId);
+                                client.dealWithRpcTimeoutForSingleTablet(
+                                    subObTable.getObServerAddr(), indexTableName, tabletId);
                             }
                             client.calculateContinuousFailure(indexTableName, e.getMessage());
                             throw e;
