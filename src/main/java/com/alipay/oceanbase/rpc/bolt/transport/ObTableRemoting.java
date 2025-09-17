@@ -73,6 +73,8 @@ public class ObTableRemoting extends BaseRemoting {
 
         ObTablePacket obRequest = this.getCommandFactory().createRequestCommand(request);
 
+        String msg = TraceUtil.formatTraceMessage(conn, request, "[debug batch timeout] send request");
+        logger.info(msg);
         ObTablePacket response = (ObTablePacket) super.invokeSync(conn.getConnection(), obRequest,
             timeoutMillis);
 

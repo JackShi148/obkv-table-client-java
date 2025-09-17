@@ -299,8 +299,8 @@ public class TableLocations {
         if (currentTime - lastRefreshTime < tableEntryRefreshInterval) {
             logger
                 .info(
-                    "punish table entry {}, last partition location refresh time {}, punish interval {}, current time {}.",
-                    tableName, lastRefreshTime, tableEntryRefreshInterval, currentTime);
+                    "punish table entry {}, tabletId {}, last partition location refresh time {}, punish interval {}, current time {}.",
+                    tableName, tabletId, lastRefreshTime, tableEntryRefreshInterval, currentTime);
             return tableEntry;
         }
         Lock lock = locationInfo.refreshLock;
@@ -331,7 +331,7 @@ public class TableLocations {
                             throw new ObTableTryLockTimeoutException(errMsg);
                         }
                     }
-                    logger.debug("success acquire refresh table location lock, tableName: {}", tableName);
+                    logger.debug("success acquire refresh table location lock, tableName: {}, tabletId: {}", tableName, tabletId);
                     locationInfo = tableEntry.getPartitionEntry().getPartitionInfo(tabletId);
                     lastRefreshTime = locationInfo.getLastUpdateTime();
                     currentTime = System.currentTimeMillis();
@@ -347,6 +347,7 @@ public class TableLocations {
                             tableClient.getTableEntryAcquireSocketTimeout(),
                             tableClient.getServerAddressPriorityTimeout(), sysUA, !tableClient
                                     .getServerCapacity().isSupportDistributedExecute() /* withLsId */);
+                    logger.debug("finish to refresh table location, tableName: {}, tabletId: {}", tableName, tabletId);
                     break;
                 } catch (ObTableTryLockTimeoutException e) {
                     // if try lock timeout, need to retry

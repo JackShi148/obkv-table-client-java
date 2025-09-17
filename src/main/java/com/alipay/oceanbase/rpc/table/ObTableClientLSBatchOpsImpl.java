@@ -628,7 +628,10 @@ public class ObTableClientLSBatchOpsImpl extends AbstractTableBatchOps {
                         if (needRefreshPartitionLocation) {
                             // refresh partition location
                             TableEntry entry = obTableClient.getOrRefreshTableEntry(realTableName, false);
-                            obTableClient.refreshTableLocationByTabletId(realTableName, obTableClient.getTabletIdByPartId(entry, originPartId));
+                            long tabletId = obTableClient.getTabletIdByPartId(entry, originPartId);
+                            logger.info("[debug batch timeout] begin refresh tablet location, tablet_id: {}", tabletId);
+                            obTableClient.refreshTableLocationByTabletId(realTableName, tabletId);
+                            logger.info("[debug batch timeout] finish refresh tablet location, tablet_id: {}", tabletId);
                             ObTableParam param = obTableClient.getTableParamWithPartId(realTableName, originPartId, route);
                             subObTable = param.getObTable();
                         }
@@ -913,8 +916,10 @@ public class ObTableClientLSBatchOpsImpl extends AbstractTableBatchOps {
                     @Override
                     public void doTask() {
                         try {
+                            logger.info("[debug batch timeout] start doTask, lsId: {}", entry.getKey());
                             ThreadLocalMap.transmitContextMap(context);
                             executeWithRetries(finalObTableOperationResults, entry);
+                            logger.info("[debug batch timeout] finish doTask, lsId: {}", entry.getKey());
                         } catch (Exception e) {
                             logger.error(LCD.convert("01-00026"), e);
                             executor.collectExceptions(e);

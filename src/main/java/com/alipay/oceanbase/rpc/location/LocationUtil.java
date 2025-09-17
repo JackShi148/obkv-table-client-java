@@ -1539,6 +1539,7 @@ public class LocationUtil {
             location.addReplicaLocation(replica);
 
             if (location.getLeader() != null) {
+                logger.info("[debug batch timeout] tabletId: {}, leader: {}", tabletId, location.getLeader().toString());
                 partitionLocationInfo.initialized.compareAndSet(false, true);
             } else if (rs.isLast() && location.getLeader() == null) {
                 partitionLocationInfo.initializationLatch.countDown();
