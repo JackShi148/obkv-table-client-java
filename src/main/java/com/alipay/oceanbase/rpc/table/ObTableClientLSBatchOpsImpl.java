@@ -424,6 +424,11 @@ public class ObTableClientLSBatchOpsImpl extends AbstractTableBatchOps {
         LsOperationsMap lsOperationsMap = new LsOperationsMap();
 
         if (obTableClient.isOdpMode()) {
+            if (obTableClient.getServerCapacity().isSupportDistributedExecute()) {
+                logger.info("[debug old client and odp] go new process");
+            } else {
+                logger.info("[debug old client and odp] go old process");
+            }
             TabletOperationsMap tabletOperationsMap = new TabletOperationsMap();
             ObPair<ObTableParam, BatchIdxOperationPairList> obTableOperations =
                     new ObPair<>(new ObTableParam(obTableClient.getOdpTable()), operationsWithIndex);
@@ -431,8 +436,10 @@ public class ObTableClientLSBatchOpsImpl extends AbstractTableBatchOps {
             lsOperationsMap.put(INVALID_LS_ID, tabletOperationsMap);
             return lsOperationsMap;
         } else if (!obTableClient.getServerCapacity().isSupportDistributedExecute()) {
+            logger.info("[debug old client and odp] go old process");
             return prepareByEachOperation(lsOperationsMap, operationsWithIndex);
         } else {
+            logger.info("[debug old client and odp] go new process");
             return prepareByFirstOperation(lsOperationsMap, operationsWithIndex);
         }
     }
