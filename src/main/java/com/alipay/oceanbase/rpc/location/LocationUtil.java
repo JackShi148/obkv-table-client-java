@@ -1522,6 +1522,7 @@ public class LocationUtil {
             }
             ReplicaLocation replica = buildReplicaLocation(rs);
             long partitionId = rs.getLong("tablet_id");
+            logger.info("[debug reconnect] refreshing, tablet_id: {}", partitionId);
             long lsId = withLsId ? rs.getLong("ls_id") : INVALID_LS_ID;
             if (rs.wasNull()) {
                 lsId = INVALID_LS_ID; // For non-partitioned table  
@@ -1677,6 +1678,7 @@ public class LocationUtil {
         replica.setInfo(obServerInfo);
         replica.setRole(role);
         replica.setReplicaType(replicaType);
+        logger.info("[debug reconnect] refreshing, svr_ip:{}, svr_port: {}, role: {}", ip, svrPort, role.getIndex());
         return replica;
     }
 

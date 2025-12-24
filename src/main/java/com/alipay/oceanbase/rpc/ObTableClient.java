@@ -2179,6 +2179,7 @@ public class ObTableClient extends AbstractObTableClient implements Lifecycle {
                         request.setTableId(tableParam.getTableId());
                         long partitionId = needTabletId ? tableParam.getPartitionId() : INVALID_TABLET_ID;
                         routeTabletId = tableParam.getPartitionId();
+                        logger.info("[debug reconnect] routeTabletId: {}", routeTabletId);
                         request.setPartitionId(partitionId);
                         request.setTimeout(tableParam.getObTable().getObTableOperationTimeout());
                         ObTable obTable = tableParam.getObTable();
