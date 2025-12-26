@@ -1556,6 +1556,7 @@ public class LocationUtil {
                 }
             }
             location.addReplicaLocation(replica);
+            logger.info("[debug reconnect] refreshing, location leader: {}", location.getLeader());
 
             if (location.getLeader() != null) {
                 partitionLocationInfo.initialized.compareAndSet(false, true);

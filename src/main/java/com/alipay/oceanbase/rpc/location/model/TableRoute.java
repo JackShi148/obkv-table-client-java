@@ -728,13 +728,13 @@ public class TableRoute {
             obTable.setValid();
         }
 
-        for (ReplicaLocation replica : obPartitionLocationInfo.getPartitionLocation().getReplicas()) {
-            ObServerAddr replicaAddr = replica.getAddr();
-            ObTable replicaObTable = tableRoster.getTable(replicaAddr);
-            if (replicaObTable != null && !replicaObTable.isValid()) {
-                replicaObTable.setValid();
-            }
-        }
+//        for (ReplicaLocation replica : obPartitionLocationInfo.getPartitionLocation().getReplicas()) {
+//            ObServerAddr replicaAddr = replica.getAddr();
+//            ObTable replicaObTable = tableRoster.getTable(replicaAddr);
+//            if (replicaObTable != null && !replicaObTable.isValid()) {
+//                replicaObTable.setValid();
+//            }
+//        }
     }
 
     /**
